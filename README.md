@@ -86,51 +86,18 @@ Entirnan : ```https://dashboard.heroku.com/new?template=https://github.com/HBMod
 
  <b><details><summary>Termux Command</summary></b>
 * Termux hi i hman dawn chuan, i folder extract na hming ang chiah kha `cd /sdcard/HBWABot-Mz` he command ah hian hmang ang che
-* Chuanin hriattur dang leh chu, i folder chhungah chuan i lut anga, package.json ah khan `"github:HBMods-OFC/Baileys"` hei hi `"github:HBMods-OFC/Library"` tiin thlak ang che
+* Chuanin hriattur dang leh chu, i folder chhungah chuan i lut anga, settings.js ah khan phone number leh bot name tur i duh angin a awmsa ho kha i replace dawn nia..
 ```
-apt update
-```
-```
-apt upgrade
+apt update && apt upgrade
 ```
 ```
 pkg update && pkg upgrade
 ```
 ```
-pkg install bash
-```
-```
-pkg install libwebp
-```
-```
-pkg install git -y
-```
-```
-pkg install nodejs -y
-```
-```
-pkg install ffmpeg -y
-```
-```
-pkg install wget
-```
-```
-pkg install imagemagick -y
-```
-```
-pkg install yarn
-```
-```
-termux-setup-storage
-```
-```
 cd /sdcard/HBWABot-Mz
 ```
 ```
-yarn install
-```
-```
-npm start
+bash termux.sh
 ```
 </details>
 </details>

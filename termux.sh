@@ -1,53 +1,143 @@
 #!/bin/bash
 
 # Colors
-GREEN='\033[1;32m'
-CYAN='\033[1;36m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-NC='\033[0m'
+GREEN="\033[1;32m"
+CYAN="\033[1;36m"
+YELLOW="\033[1;33m"
+RED="\033[1;31m"
+NC="\033[0m"
+
+BOT_PATH="/sdcard/HBWABot-Mz"
+
+# ============== ANIMATION ==============
+
+spinner() {
+    local pid=$!
+    local delay=0.1
+    local spin='|/-\'
+    while kill -0 $pid 2>/dev/null; do
+        for i in $(seq 0 3); do
+            printf "\r${CYAN}⏳ Please wait... ${spin:$i:1}${NC}"
+            sleep $delay
+        done
+    done
+    printf "\r${GREEN}✔ Done!                 ${NC}\n"
+}
+
+typewriter() {
+    text="$1"
+    for ((i=0; i<${#text}; i++)); do
+        echo -n "${text:$i:1}"
+        sleep 0.01
+    done
+    echo ""
+}
+
+banner="
+██╗  ██╗██████╗ ██╗    ██╗ █████╗ ██████╗  ██████╗ ████████╗
+██║  ██║██╔══██╗██║    ██║██╔══██╗██╔══██╗██╔═══██╗╚══██╔══╝
+███████║██████╔╝██║ █╗ ██║███████║██████╔╝██║   ██║   ██║   
+██╔══██║██╔══██╗██║███╗██║██╔══██║██╔══██╗██║   ██║   ██║   
+██║  ██║██████╚███╔███╔╝██║  ██║██████╔╝╚██████╔╝   ██║   
+╚═╝  ╚═╝╚═════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚═════╝  ╚═════╝    ╚═╝   
+
+             HBWABot-Mz Installer
+"
 
 clear
+echo -e "${GREEN}"
+typewriter "$banner"
+echo -e "${NC}"
 
-echo -e "${CYAN}🔧 Setting up Termux environment...${NC}"
+# ============== SETUP STORAGE ==============
+echo -e "${YELLOW}📁 Requesting storage permission...${NC}"
+termux-setup-storage >/dev/null 2>&1 &
+spinner
 
-# Storage permission
-echo -e "${YELLOW}Requesting storage permission...${NC}"
-termux-setup-storage
-sleep 2
+# ============== PACKAGE UPDATE ==============
+echo -e "${CYAN}📦 Updating Termux packages...${NC}"
+(apt update -y && apt upgrade -y) >/dev/null 2>&1 &
+spinner
 
-# Create safe storage paths
-SHARE=~/storage/shared/HBWABot
-mkdir -p $SHARE
+# ============== INSTALL DEPENDENCIES ==============
+echo -e "${YELLOW}📦 Installing dependencies...${NC}"
+(pkg install -y nodejs yarn ffmpeg git jq util-linux) >/dev/null 2>&1 &
+spinner
 
-echo -e "${GREEN}✔ Storage enabled.${NC}"
-echo -e "${CYAN}Files will be saved to:${NC} $SHARE"
+# ============== NODE FIX ==============
+echo -e "${CYAN}🔧 Fixing Node cache...${NC}"
+(npm cache clean --force) >/dev/null 2>&1 &
+spinner
 
-# Update packages
-echo -e "${YELLOW}Updating packages...${NC}"
-pkg update -y && pkg upgrade -y
+echo -e "${CYAN}🔧 Fixing Yarn config...${NC}"
+(yarn config set ignore-engines true) >/dev/null 2>&1 &
+spinner
 
-# Install dependencies
-echo -e "${YELLOW}Installing required packages...${NC}"
-pkg install git nodejs wget curl ffmpeg imagemagick -y
+# ============== MOUNT BIND FIX ==============
+echo -e "${YELLOW}🔧 Applying storage fix for node_modules...${NC}"
+mkdir -p $HOME/hbwa_modules
 
-# Clone repo
-echo -e "${CYAN}📥 Cloning HBWABot repo...${NC}"
-git clone https://github.com/HBMods-OFC/HBWABot-Mz.git
+rm -rf $BOT_PATH/node_modules >/dev/null 2>&1
 
-cd HBWABot-Mz || { echo "❌ Folder missing!"; exit 1; }
+(mount --bind $HOME/hbwa_modules $BOT_PATH/node_modules) >/dev/null 2>&1 &
+spinner
 
-echo -e "${YELLOW}Installing npm modules...${NC}"
-npm install
+# ============== INSTALL BOT DEPENDENCIES ==============
+echo -e "${YELLOW}📦 Installing bot packages (Yarn)...${NC}"
+cd $BOT_PATH
+(yarn install --force) >/dev/null 2>&1 &
+spinner
 
-# Copy config file safely to phone storage
-echo -e "${CYAN}📁 Copying settings to phone storage...${NC}"
-cp settings.json $SHARE/settings.json
+echo -e "${GREEN}✔ Installation completed successfully!${NC}"
+sleep 1
 
-echo -e "${GREEN}✔ settings.json saved to your Internal Storage!${NC}"
-echo -e "${CYAN}Path:${NC} $SHARE/settings.json"
+# ================= MENU =================
+menu() {
+while true; do
+clear
+echo -e "${GREEN}
+━━━━━━━━ HBWABot-Mz Control ━━━━━━━━
+${CYAN}1) Start Bot (npm start)
+2) Stop Bot
+3) Restart Bot
+4) Show Bot Logs
+5) Generate New QR Code
+6) Exit
+${NC}"
 
-# Start script
-echo -e "${GREEN}All setup completed!${NC}"
-echo -e "${YELLOW}To start the bot run:${NC}"
-echo -e "${CYAN}npm start${NC}"
+read -p "Choose: " opt
+
+case $opt in
+1)
+    echo -e "${YELLOW}▶ Starting bot...${NC}"
+    npm start
+    ;;
+2)
+    echo -e "${RED}⛔ Stopping bot...${NC}"
+    pkill -f "node index.js"
+    ;;
+3)
+    echo -e "${YELLOW}🔁 Restarting bot...${NC}"
+    pkill -f "node index.js"
+    npm start
+    ;;
+4)
+    echo -e "${CYAN}📜 Bot Logs (Ctrl + C to stop)...${NC}"
+    tail -f logs.txt
+    ;;
+5)
+    echo -e "${CYAN}🔑 Generating QR Code...${NC}"
+    node index.js --qr
+    ;;
+6)
+    exit
+    ;;
+*)
+    echo -e "${RED}⚠ Invalid option!${NC}"
+    sleep 1
+    ;;
+esac
+done
+}
+
+menu
