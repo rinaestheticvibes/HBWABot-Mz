@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Color Codes
+# Colors
 GREEN='\033[1;32m'
 CYAN='\033[1;36m'
 YELLOW='\033[1;33m'
@@ -9,83 +9,45 @@ NC='\033[0m'
 
 clear
 
-# Animation Frames
-frames=(
-"
-       ☢️        
-     ☢️☢️☢️      
-   ☢️☢️☢️☢️☢️    
- ☢️☢️☢️☢️☢️☢️☢️  
-☢️☢️☢️☢️☢️☢️☢️☢️☢️
-"
-"
-       🔥🔥        
-     🔥🔥🔥🔥      
-   🔥🔥🔥🔥🔥🔥    
- 🔥🔥🔥🔥🔥🔥🔥🔥  
-🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-"
-"
-       🔥🔥        
-     🔥🔥🔥🔥      
-   🔥🔥🔥🔥🔥🔥    
- 🔥🔥🔥🔥🔥🔥🔥🔥  
-🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-"
-"
-       ☁️☁️☁️       
-     ☁️☁️☁️☁️☁️     
-   ☁️☁️☁️☁️☁️☁️☁️   
- ☁️☁️☁️☁️☁️☁️☁️☁️☁️ 
-☁️☁️☁️☁️☁️☁️☁️☁️☁️☁️☁️
-"
-)
+echo -e "${CYAN}🔧 Setting up Termux environment...${NC}"
 
-# Display Animation
-for i in {1..2}; do
-  for frame in "${frames[@]}"; do
-    clear
-    echo -e "$RED$frame$NC"
-    sleep 0.2
-  done
-done
-
-echo -e "\n${GREEN}🚀 HBWABot Installation Starting...${NC}"
-sleep 1
-
-# Update System
-echo -e "${YELLOW}🔧 Updating packages...${NC}"
-apt update && apt upgrade -y
-
-# Install Required Packages
-echo -e "${YELLOW}📦 Installing dependencies...${NC}"
-apt install -y libwebp git nodejs ffmpeg wget imagemagick
-
-# Allow Storage Access
-echo -e "${YELLOW}📂 Setting up Termux storage...${NC}"
+# Storage permission
+echo -e "${YELLOW}Requesting storage permission...${NC}"
 termux-setup-storage
+sleep 2
 
-# Install Yarn
-echo -e "${YELLOW}📥 Installing Yarn...${NC}"
-npm install -g yarn
+# Create safe storage paths
+SHARE=~/storage/shared/HBWABot
+mkdir -p $SHARE
 
-# Clone Repo
-echo -e "${YELLOW}🔄 Cloning HBWABot repository...${NC}"
+echo -e "${GREEN}✔ Storage enabled.${NC}"
+echo -e "${CYAN}Files will be saved to:${NC} $SHARE"
+
+# Update packages
+echo -e "${YELLOW}Updating packages...${NC}"
+pkg update -y && pkg upgrade -y
+
+# Install dependencies
+echo -e "${YELLOW}Installing required packages...${NC}"
+pkg install git nodejs wget curl ffmpeg imagemagick -y
+
+# Clone repo
+echo -e "${CYAN}📥 Cloning HBWABot repo...${NC}"
 git clone https://github.com/HBMods-OFC/HBWABot-Mz.git
 
-cd HBWABot-Mz || { echo "Folder missing!"; exit; }
+cd HBWABot-Mz || { echo "❌ Folder missing!"; exit 1; }
 
-# Edit settings.json Reminder
-echo -e "${CYAN}⚙️ Before running the bot, edit 'settings.json'!${NC}"
-echo -e "${GREEN}Use: ${YELLOW}nano settings.json${NC}"
+echo -e "${YELLOW}Installing npm modules...${NC}"
+npm install
 
-# Install Node Modules
-echo -e "${YELLOW}📦 Installing bot dependencies...${NC}"
-yarn install
+# Copy config file safely to phone storage
+echo -e "${CYAN}📁 Copying settings to phone storage...${NC}"
+cp settings.json $SHARE/settings.json
 
-# Start Bot
-echo -e "${YELLOW}🚀 Starting HBWABot...${NC}"
-npm start
+echo -e "${GREEN}✔ settings.json saved to your Internal Storage!${NC}"
+echo -e "${CYAN}Path:${NC} $SHARE/settings.json"
 
-echo -e "${GREEN}✔️ Installation Complete!${NC}"
-echo -e "${CYAN}🎉 HBWABot is Now Running! 🎉${NC}"
+# Start script
+echo -e "${GREEN}All setup completed!${NC}"
+echo -e "${YELLOW}To start the bot run:${NC}"
+echo -e "${CYAN}npm start${NC}"
